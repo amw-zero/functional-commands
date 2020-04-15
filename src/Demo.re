@@ -43,13 +43,14 @@ let attemptMoveCommand: (networkBridge) => IO.t(state, string) = networkBridge =
 
   let moveIfLegal = legal => legal ? moveNums(state.cards) : state.cards;
 
-  isMoveLegalRequest(networkBridge, 2, 3)      // make network request
-  |> IO.map(moveIfLegal)                 // operate on state subtree
-  |> IO.map(c => {...state, cards: c});  // replace state subtree, resolve to full state
+  isMoveLegalRequest(networkBridge, 2, 3)     // make network request
+  |> IO.map(moveIfLegal)                      // operate on state subtree
+  |> IO.map(c => {...state, cards: c});       // replace state subtree, resolve to full state
 };
 
 let test = () => {
-  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(true));  
+  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(true));
+  
   attemptMoveCommand(passthroughNetworkBridge)
   |> IO.unsafeRunAsync(_ => ());
 
