@@ -8,46 +8,6 @@ module AppErrorType: BsBastet.Interface.TYPE with type t = string = {
 module IOAppError = IO.WithError(AppErrorType);
 let (>>=) = IOAppError.Infix.(>>=);
 
-let l = L.cons(1, [2,3]);
-
-L.showBy(string_of_int, l) |> Js.log;
-
-let asyncFunc = onDone => {
-  Js.log("asyncFunc");
-  onDone(Ok(7));
-//  onDone(Error("bad"));
-};
-
-Js.log("Making IO");
-let io: IO.t(int, string) = IO.async(asyncFunc);
-
-let io2: IO.t(int, string) = IO.suspendIO(() => IO.async(onDone => onDone(Ok(7))));
-
-Js.log("unsafeRunAsync");
-
-io |> IO.unsafeRunAsync(r => switch (r) {
-  | Ok(a) => Js.log(a)
-  | Error(msg) => Js.log(msg)
-});
-
-
-type effect =
-  | NetworkRequest(string);
-
-let run = effect => 
-  switch (effect) {
-  | NetworkRequest(s) => Js.log(s)
-  };
-
-let isMoveLegal2 = (c1, c2) => NetworkRequest("move_legality");
-
-
-let otherNetworkRequest = () => IO.async(onDone => onDone(Ok(5)));
-
-
-
-let otherUseCase = (arg) => IO.suspendIO(otherNetworkRequest)
-
 
 // Monad version
  // let moveIfLegalM = legal => IO.pure(legal ? moveNums(state) : state);

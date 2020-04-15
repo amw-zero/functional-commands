@@ -15,59 +15,6 @@ var IOAppError = Relude_IO.WithError(AppErrorType);
 
 var $great$great$eq = IOAppError.Infix.$great$great$eq;
 
-var l = Relude_List.cons(1, /* :: */[
-      2,
-      /* :: */[
-        3,
-        /* [] */0
-      ]
-    ]);
-
-console.log(Relude_List.showBy((function (prim) {
-            return String(prim);
-          }), l));
-
-function asyncFunc(onDone) {
-  console.log("asyncFunc");
-  return Curry._1(onDone, /* Ok */Block.__(0, [7]));
-}
-
-console.log("Making IO");
-
-var io = Relude_IO.async(asyncFunc);
-
-var io2 = Relude_IO.suspendIO((function (param) {
-        return Relude_IO.async((function (onDone) {
-                      return Curry._1(onDone, /* Ok */Block.__(0, [7]));
-                    }));
-      }));
-
-console.log("unsafeRunAsync");
-
-Relude_IO.unsafeRunAsync((function (r) {
-        console.log(r[0]);
-        return /* () */0;
-      }), io);
-
-function run(effect) {
-  console.log(effect[0]);
-  return /* () */0;
-}
-
-function isMoveLegal2(c1, c2) {
-  return /* NetworkRequest */["move_legality"];
-}
-
-function otherNetworkRequest(param) {
-  return Relude_IO.async((function (onDone) {
-                return Curry._1(onDone, /* Ok */Block.__(0, [5]));
-              }));
-}
-
-function otherUseCase(arg) {
-  return Relude_IO.suspendIO(otherNetworkRequest);
-}
-
 function makeNetworkRequest(path, networkBridge, param) {
   return Relude_IO.async(Curry._1(networkBridge, path));
 }
@@ -148,14 +95,6 @@ exports.Opt = Opt;
 exports.AppErrorType = AppErrorType;
 exports.IOAppError = IOAppError;
 exports.$great$great$eq = $great$great$eq;
-exports.l = l;
-exports.asyncFunc = asyncFunc;
-exports.io = io;
-exports.io2 = io2;
-exports.run = run;
-exports.isMoveLegal2 = isMoveLegal2;
-exports.otherNetworkRequest = otherNetworkRequest;
-exports.otherUseCase = otherUseCase;
 exports.makeNetworkRequest = makeNetworkRequest;
 exports.isMoveLegalRequest = isMoveLegalRequest;
 exports.cards = cards;
