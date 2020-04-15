@@ -27,35 +27,50 @@ type state = {
   other: int
 };
 
-let cards = [|[1], [2]|];
-
-let state = { cards, other: 5};
-
 type networkBridge = (string, (result(bool, string) => unit)) => unit;
 
-let attemptMoveCommand: (networkBridge) => IO.t(state, string) = networkBridge => {
-  let moveNums = s => {
-    let num = L.head(s[0]) |> Opt.getOrElse(5);
-    s[1] = L.append(num, s[1]);
-    s[0] = [];
-    s
+let attemptMoveCommand: (state, networkBridge) => IO.t(state, string) = (state, networkBridge) => {  
+  let moveNums = c => {
+    let num = L.head(c[0]) |> Opt.getOrElse(5);
+    let newCards = Array.copy(c);
+    newCards[1] = L.append(num, c[1]);
+    newCards[0] = [];
+    newCards
   };
 
-  let moveIfLegal = legal => legal ? moveNums(state.cards) : state.cards;
+  let moveIfLegal = (state, legal) => legal ? moveNums(state.cards) : state.cards;
 
   isMoveLegalRequest(networkBridge, 2, 3)     // make network request
-  |> IO.map(moveIfLegal)                      // operate on state subtree
+  |> IO.map(moveIfLegal(state))               // operate on state subtree
   |> IO.map(c => {...state, cards: c});       // replace state subtree, resolve to full state
 };
 
-let test = () => {
+let testRequestSuccessLegalMove = () => {
   let passthroughNetworkBridge = (_, onDone) => onDone(Ok(true));
+  let cards = [|[1], [2]|];
+  let state = { cards, other: 5};
   
-  attemptMoveCommand(passthroughNetworkBridge)
-  |> IO.unsafeRunAsync(_ => ());
-
-  Js.log(state.cards[0] == []);
-  Js.log(state.cards[1] == [2, 1]);
+  attemptMoveCommand(state, passthroughNetworkBridge)
+  |> IO.unsafeRunAsync(r => switch (r) {
+    | Ok(s) => {
+      Js.log(s.cards[0] == []);
+      Js.log(s.cards[1] == [2, 1]);
+    }
+    | Error(e) => Js.log(e)
+  });
 };
 
-test();
+let testRequestSuccessIllegalMove = () => {
+  let cards = [|[1], [2]|];
+  let state = { cards, other: 5};
+  let passthroughNetworkBridge = (_, onDone) => onDone(Error("error"));
+  
+  attemptMoveCommand(state, passthroughNetworkBridge)
+  |> IO.unsafeRunAsync(r => switch (r) {
+    | Ok(_) => Js.log("false")
+    | Error(_) => Js.log("true")
+  });
+};
+
+testRequestSuccessLegalMove();
+testRequestSuccessIllegalMove();
