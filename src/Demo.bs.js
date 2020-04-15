@@ -103,6 +103,43 @@ function testRequestSuccessIllegalMove(param) {
     other: 5
   };
   var passthroughNetworkBridge = function (param, onDone) {
+    return Curry._1(onDone, /* Ok */Block.__(0, [false]));
+  };
+  return Relude_IO.unsafeRunAsync((function (r) {
+                if (r.tag) {
+                  console.log("true");
+                  return /* () */0;
+                } else {
+                  var s = r[0];
+                  console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(s.cards, 0), /* :: */[
+                            1,
+                            /* [] */0
+                          ]));
+                  console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(s.cards, 1), /* :: */[
+                            2,
+                            /* [] */0
+                          ]));
+                  return /* () */0;
+                }
+              }), attemptMoveCommand(state, passthroughNetworkBridge));
+}
+
+function testRequestFailure(param) {
+  var cards = [
+    /* :: */[
+      1,
+      /* [] */0
+    ],
+    /* :: */[
+      2,
+      /* [] */0
+    ]
+  ];
+  var state = {
+    cards: cards,
+    other: 5
+  };
+  var passthroughNetworkBridge = function (param, onDone) {
     return Curry._1(onDone, /* Error */Block.__(1, ["error"]));
   };
   return Relude_IO.unsafeRunAsync((function (r) {
@@ -117,6 +154,8 @@ function testRequestSuccessIllegalMove(param) {
 }
 
 testRequestSuccessLegalMove(/* () */0);
+
+testRequestSuccessIllegalMove(/* () */0);
 
 testRequestSuccessIllegalMove(/* () */0);
 
@@ -137,4 +176,5 @@ exports.isMoveLegalRequest = isMoveLegalRequest;
 exports.attemptMoveCommand = attemptMoveCommand;
 exports.testRequestSuccessLegalMove = testRequestSuccessLegalMove;
 exports.testRequestSuccessIllegalMove = testRequestSuccessIllegalMove;
+exports.testRequestFailure = testRequestFailure;
 /* IOAppError Not a pure module */

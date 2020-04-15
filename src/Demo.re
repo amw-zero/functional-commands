@@ -63,6 +63,21 @@ let testRequestSuccessLegalMove = () => {
 let testRequestSuccessIllegalMove = () => {
   let cards = [|[1], [2]|];
   let state = { cards, other: 5};
+  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(false));
+  
+  attemptMoveCommand(state, passthroughNetworkBridge)
+  |> IO.unsafeRunAsync(r => switch (r) {
+    | Ok(s) => {
+      Js.log(s.cards[0] == [1]);
+      Js.log(s.cards[1] == [2]);
+    }
+    | Error(_) => Js.log("true");
+  });
+};
+
+let testRequestFailure = () => {
+  let cards = [|[1], [2]|];
+  let state = { cards, other: 5};
   let passthroughNetworkBridge = (_, onDone) => onDone(Error("error"));
   
   attemptMoveCommand(state, passthroughNetworkBridge)
@@ -73,4 +88,5 @@ let testRequestSuccessIllegalMove = () => {
 };
 
 testRequestSuccessLegalMove();
+testRequestSuccessIllegalMove();
 testRequestSuccessIllegalMove();
