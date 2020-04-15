@@ -42,51 +42,57 @@ let run = effect =>
 let isMoveLegal2 = (c1, c2) => NetworkRequest("move_legality");
 
 
-let makeNetworkRequest = () => IO.async(onDone => onDone(Ok(true)));
 let otherNetworkRequest = () => IO.async(onDone => onDone(Ok(5)));
 
-// If move is legal, move cards between cascades
-let isMoveLegalUseCase = (s, c1, c2) => IO.suspendIO(makeNetworkRequest);
+
+
 let otherUseCase = (arg) => IO.suspendIO(otherNetworkRequest)
 
-let state = [|[1], [2]|];
 
-let moveNums = s => {
-  let num = L.head(s[0]) |> Opt.getOrElse(5);
-  s[1] = L.append(num, s[1]);
-  s[0] = [];
-  s
+// Monad version
+ // let moveIfLegalM = legal => IO.pure(legal ? moveNums(state) : state);
+
+ // let cmdM = 
+ //  isMoveLegalUseCase(() => 5, 2, 3)
+ //  >>= (moveIfLegalM)
+
+let makeNetworkRequest = () => IO.async(onDone => onDone(Ok(true)));
+
+// If move is legal, move cards between cascades
+let isMoveLegalRequest = (s, c1, c2) => IO.suspendIO(makeNetworkRequest);
+
+type state = {
+  cards: array(list(int)),
+  other: int
 };
 
-// legal => IO.pure()
- let moveIfLegalM = legal => IO.pure(legal ? moveNums(state) : state);
-let moveIfLegal = legal => legal ? moveNums(state) : state;
+let cards = [|[1], [2]|];
 
-// moveNums(state);
-Js.log(state[0]);
-Js.log(state[1]);
+let state = { cards, other: 5};
 
+let attemptMoveCommand: IO.t(state, string) = {
+  let moveNums = s => {
+    let num = L.head(s[0]) |> Opt.getOrElse(5);
+    s[1] = L.append(num, s[1]);
+    s[0] = [];
+    s
+  };
 
-// |> IO.unsafeRunAsync(_ => ());
+  let moveIfLegal = legal => legal ? moveNums(state.cards) : state.cards;
 
-
-
-let cmdM = 
-  isMoveLegalUseCase(() => 5, 2, 3)
-  >>= (moveIfLegalM)
-
-let cmdMap: IO.t(array(list(int)), string) = 
-  isMoveLegalUseCase(() => 5, 2, 3)
-  |> IO.map(moveIfLegal);
+  isMoveLegalRequest(() => 5, 2, 3)      // make network request
+  |> IO.map(moveIfLegal)                 // operate on state subtree
+  |> IO.map(c => {...state, cards: c});  // replace state subtree
+};
 
 let test = () => {
   // Command
-  cmdMap
+  attemptMoveCommand
   |> IO.unsafeRunAsync(_ => ());
 
   // Result
-  Js.log(state[0] == []);
-  Js.log(state[1] == [2, 1]);
+  Js.log(state.cards[0] == []);
+  Js.log(state.cards[1] == [2, 1]);
 };
 
 test();

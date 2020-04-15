@@ -58,27 +58,27 @@ function isMoveLegal2(c1, c2) {
   return /* NetworkRequest */["move_legality"];
 }
 
-function makeNetworkRequest(param) {
-  return Relude_IO.async((function (onDone) {
-                return Curry._1(onDone, /* Ok */Block.__(0, [true]));
-              }));
-}
-
 function otherNetworkRequest(param) {
   return Relude_IO.async((function (onDone) {
                 return Curry._1(onDone, /* Ok */Block.__(0, [5]));
               }));
 }
 
-function isMoveLegalUseCase(s, c1, c2) {
-  return Relude_IO.suspendIO(makeNetworkRequest);
-}
-
 function otherUseCase(arg) {
   return Relude_IO.suspendIO(otherNetworkRequest);
 }
 
-var state = [
+function makeNetworkRequest(param) {
+  return Relude_IO.async((function (onDone) {
+                return Curry._1(onDone, /* Ok */Block.__(0, [true]));
+              }));
+}
+
+function isMoveLegalRequest(s, c1, c2) {
+  return Relude_IO.suspendIO(makeNetworkRequest);
+}
+
+var cards = [
   /* :: */[
     1,
     /* [] */0
@@ -89,39 +89,36 @@ var state = [
   ]
 ];
 
-function moveNums(s) {
-  var num = Relude_Option.getOrElse(5, Relude_List.head(Caml_array.caml_array_get(s, 0)));
-  Caml_array.caml_array_set(s, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
-  Caml_array.caml_array_set(s, 0, /* [] */0);
-  return s;
-}
-
-function moveIfLegalM(legal) {
-  return Relude_IO.pure(legal ? moveNums(state) : state);
-}
+var state = {
+  cards: cards,
+  other: 5
+};
 
 function moveIfLegal(legal) {
   if (legal) {
-    return moveNums(state);
+    var s = cards;
+    var num = Relude_Option.getOrElse(5, Relude_List.head(Caml_array.caml_array_get(s, 0)));
+    Caml_array.caml_array_set(s, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
+    Caml_array.caml_array_set(s, 0, /* [] */0);
+    return s;
   } else {
-    return state;
+    return cards;
   }
 }
 
-console.log(Caml_array.caml_array_get(state, 0));
-
-console.log(Caml_array.caml_array_get(state, 1));
-
-var cmdM = Curry._2($great$great$eq, Relude_IO.suspendIO(makeNetworkRequest), moveIfLegalM);
-
-var cmdMap = Relude_IO.map(moveIfLegal, Relude_IO.suspendIO(makeNetworkRequest));
+var attemptMoveCommand = Relude_IO.map((function (c) {
+        return {
+                cards: c,
+                other: 5
+              };
+      }), Relude_IO.map(moveIfLegal, Relude_IO.suspendIO(makeNetworkRequest)));
 
 function test(param) {
   Relude_IO.unsafeRunAsync((function (param) {
           return /* () */0;
-        }), cmdMap);
-  console.log(Caml_array.caml_array_get(state, 0) === /* [] */0);
-  console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(state, 1), /* :: */[
+        }), attemptMoveCommand);
+  console.log(Caml_array.caml_array_get(cards, 0) === /* [] */0);
+  console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(cards, 1), /* :: */[
             2,
             /* :: */[
               1,
@@ -151,15 +148,12 @@ exports.io = io;
 exports.io2 = io2;
 exports.run = run;
 exports.isMoveLegal2 = isMoveLegal2;
-exports.makeNetworkRequest = makeNetworkRequest;
 exports.otherNetworkRequest = otherNetworkRequest;
-exports.isMoveLegalUseCase = isMoveLegalUseCase;
 exports.otherUseCase = otherUseCase;
+exports.makeNetworkRequest = makeNetworkRequest;
+exports.isMoveLegalRequest = isMoveLegalRequest;
+exports.cards = cards;
 exports.state = state;
-exports.moveNums = moveNums;
-exports.moveIfLegalM = moveIfLegalM;
-exports.moveIfLegal = moveIfLegal;
-exports.cmdM = cmdM;
-exports.cmdMap = cmdMap;
+exports.attemptMoveCommand = attemptMoveCommand;
 exports.test = test;
 /* IOAppError Not a pure module */
