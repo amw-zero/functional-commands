@@ -56,10 +56,11 @@ let otherUseCase = (arg) => IO.suspendIO(otherNetworkRequest)
  //  isMoveLegalUseCase(() => 5, 2, 3)
  //  >>= (moveIfLegalM)
 
-let makeNetworkRequest = () => IO.async(onDone => onDone(Ok(true)));
+
+let makeNetworkRequest = (path, networkBridge, ()) => IO.async(networkBridge(path));
 
 // If move is legal, move cards between cascades
-let isMoveLegalRequest = (s, c1, c2) => IO.suspendIO(makeNetworkRequest);
+let isMoveLegalRequest = (networkBridge, c1, c2) => IO.suspendIO(makeNetworkRequest("api/move_legality", networkBridge));
 
 type state = {
   cards: array(list(int)),
@@ -70,7 +71,9 @@ let cards = [|[1], [2]|];
 
 let state = { cards, other: 5};
 
-let attemptMoveCommand: IO.t(state, string) = {
+type networkBridge = (string, (result(bool, string) => unit)) => unit;
+
+let attemptMoveCommand: (networkBridge) => IO.t(state, string) = networkBridge => {
   let moveNums = s => {
     let num = L.head(s[0]) |> Opt.getOrElse(5);
     s[1] = L.append(num, s[1]);
@@ -80,17 +83,16 @@ let attemptMoveCommand: IO.t(state, string) = {
 
   let moveIfLegal = legal => legal ? moveNums(state.cards) : state.cards;
 
-  isMoveLegalRequest(() => 5, 2, 3)      // make network request
+  isMoveLegalRequest(networkBridge, 2, 3)      // make network request
   |> IO.map(moveIfLegal)                 // operate on state subtree
   |> IO.map(c => {...state, cards: c});  // replace state subtree, resolve to full state
 };
 
 let test = () => {
-  // Command
-  attemptMoveCommand
+  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(true));  
+  attemptMoveCommand(passthroughNetworkBridge)
   |> IO.unsafeRunAsync(_ => ());
 
-  // Result
   Js.log(state.cards[0] == []);
   Js.log(state.cards[1] == [2, 1]);
 };

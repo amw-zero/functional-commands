@@ -68,14 +68,14 @@ function otherUseCase(arg) {
   return Relude_IO.suspendIO(otherNetworkRequest);
 }
 
-function makeNetworkRequest(param) {
-  return Relude_IO.async((function (onDone) {
-                return Curry._1(onDone, /* Ok */Block.__(0, [true]));
-              }));
+function makeNetworkRequest(path, networkBridge, param) {
+  return Relude_IO.async(Curry._1(networkBridge, path));
 }
 
-function isMoveLegalRequest(s, c1, c2) {
-  return Relude_IO.suspendIO(makeNetworkRequest);
+function isMoveLegalRequest(networkBridge, c1, c2) {
+  return Relude_IO.suspendIO((function (param) {
+                return Relude_IO.async(Curry._1(networkBridge, "api/move_legality"));
+              }));
 }
 
 var cards = [
@@ -94,29 +94,35 @@ var state = {
   other: 5
 };
 
-function moveIfLegal(legal) {
-  if (legal) {
-    var s = cards;
-    var num = Relude_Option.getOrElse(5, Relude_List.head(Caml_array.caml_array_get(s, 0)));
-    Caml_array.caml_array_set(s, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
-    Caml_array.caml_array_set(s, 0, /* [] */0);
-    return s;
-  } else {
-    return cards;
-  }
+function attemptMoveCommand(networkBridge) {
+  var moveIfLegal = function (legal) {
+    if (legal) {
+      var s = cards;
+      var num = Relude_Option.getOrElse(5, Relude_List.head(Caml_array.caml_array_get(s, 0)));
+      Caml_array.caml_array_set(s, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
+      Caml_array.caml_array_set(s, 0, /* [] */0);
+      return s;
+    } else {
+      return cards;
+    }
+  };
+  return Relude_IO.map((function (c) {
+                return {
+                        cards: c,
+                        other: 5
+                      };
+              }), Relude_IO.map(moveIfLegal, Relude_IO.suspendIO((function (param) {
+                        return Relude_IO.async(Curry._1(networkBridge, "api/move_legality"));
+                      }))));
 }
 
-var attemptMoveCommand = Relude_IO.map((function (c) {
-        return {
-                cards: c,
-                other: 5
-              };
-      }), Relude_IO.map(moveIfLegal, Relude_IO.suspendIO(makeNetworkRequest)));
-
 function test(param) {
+  var passthroughNetworkBridge = function (param, onDone) {
+    return Curry._1(onDone, /* Ok */Block.__(0, [true]));
+  };
   Relude_IO.unsafeRunAsync((function (param) {
           return /* () */0;
-        }), attemptMoveCommand);
+        }), attemptMoveCommand(passthroughNetworkBridge));
   console.log(Caml_array.caml_array_get(cards, 0) === /* [] */0);
   console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(cards, 1), /* :: */[
             2,
