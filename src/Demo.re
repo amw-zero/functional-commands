@@ -15,21 +15,19 @@ let (>>=) = IOAppError.Infix.(>>=);
 //  isMoveLegalUseCase(() => 5, 2, 3)
 //  >>= (moveIfLegalM)
 
-let makeNetworkRequest = (path, networkBridge, ()) =>
-  IO.async(networkBridge(path));
-
 // If move is legal, move cards between cascades
 let isMoveLegalRequest = (networkBridge, c1, c2) =>
-  IO.suspendIO(makeNetworkRequest("api/move_legality", networkBridge));
+  networkBridge("api/move_legality");
 
 type state = {
   cards: array(list(int)),
   other: int,
 };
 
-type networkBridge = (string, result(bool, string) => unit) => unit;
+// type networkBridge = (string, result(bool, string) => unit) => unit;
 
-let attemptMoveCommand: (state, networkBridge) => IO.t(state, string) =
+let attemptMoveCommand:
+  (state, string => IO.t(bool, string)) => IO.t(state, string) =
   (state, networkBridge) => {
     let moveNums = c => {
       let num = L.head(c[0]) |> Opt.getOrElse(5);
@@ -48,7 +46,7 @@ let attemptMoveCommand: (state, networkBridge) => IO.t(state, string) =
   };
 
 let testRequestSuccessLegalMove = () => {
-  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(true));
+  let passthroughNetworkBridge = _ => IO.pure(true);
   let cards = [|[1], [2]|];
   let state = {cards, other: 5};
 
@@ -66,7 +64,7 @@ let testRequestSuccessLegalMove = () => {
 let testRequestSuccessIllegalMove = () => {
   let cards = [|[1], [2]|];
   let state = {cards, other: 5};
-  let passthroughNetworkBridge = (_, onDone) => onDone(Ok(false));
+  let passthroughNetworkBridge = _ => IO.pure(false);
 
   attemptMoveCommand(state, passthroughNetworkBridge)
   |> IO.unsafeRunAsync(r =>
@@ -82,7 +80,7 @@ let testRequestSuccessIllegalMove = () => {
 let testRequestFailure = () => {
   let cards = [|[1], [2]|];
   let state = {cards, other: 5};
-  let passthroughNetworkBridge = (_, onDone) => onDone(Error("error"));
+  let passthroughNetworkBridge = _ => IO.throw("error");
 
   attemptMoveCommand(state, passthroughNetworkBridge)
   |> IO.unsafeRunAsync(r =>

@@ -2,7 +2,6 @@
 'use strict';
 
 var $$Array = require("bs-platform/lib/js/array.js");
-var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Caml_obj = require("bs-platform/lib/js/caml_obj.js");
 var Relude_IO = require("relude/src/Relude_IO.bs.js");
@@ -16,14 +15,8 @@ var IOAppError = Relude_IO.WithError(AppErrorType);
 
 var $great$great$eq = IOAppError.Infix.$great$great$eq;
 
-function makeNetworkRequest(path, networkBridge, param) {
-  return Relude_IO.async(Curry._1(networkBridge, path));
-}
-
 function isMoveLegalRequest(networkBridge, c1, c2) {
-  return Relude_IO.suspendIO((function (param) {
-                return Relude_IO.async(Curry._1(networkBridge, "api/move_legality"));
-              }));
+  return Curry._1(networkBridge, "api/move_legality");
 }
 
 function attemptMoveCommand(state, networkBridge) {
@@ -45,14 +38,12 @@ function attemptMoveCommand(state, networkBridge) {
                     } else {
                       return state$1.cards;
                     }
-                  }), Relude_IO.suspendIO((function (param) {
-                        return Relude_IO.async(Curry._1(networkBridge, "api/move_legality"));
-                      }))));
+                  }), Curry._1(networkBridge, "api/move_legality")));
 }
 
 function testRequestSuccessLegalMove(param) {
-  var passthroughNetworkBridge = function (param, onDone) {
-    return Curry._1(onDone, /* Ok */Block.__(0, [true]));
+  var passthroughNetworkBridge = function (param) {
+    return Relude_IO.pure(true);
   };
   var cards = [
     /* :: */[
@@ -102,8 +93,8 @@ function testRequestSuccessIllegalMove(param) {
     cards: cards,
     other: 5
   };
-  var passthroughNetworkBridge = function (param, onDone) {
-    return Curry._1(onDone, /* Ok */Block.__(0, [false]));
+  var passthroughNetworkBridge = function (param) {
+    return Relude_IO.pure(false);
   };
   return Relude_IO.unsafeRunAsync((function (r) {
                 if (r.tag) {
@@ -139,8 +130,8 @@ function testRequestFailure(param) {
     cards: cards,
     other: 5
   };
-  var passthroughNetworkBridge = function (param, onDone) {
-    return Curry._1(onDone, /* Error */Block.__(1, ["error"]));
+  var passthroughNetworkBridge = function (param) {
+    return Relude_IO.$$throw("error");
   };
   return Relude_IO.unsafeRunAsync((function (r) {
                 if (r.tag) {
@@ -171,7 +162,6 @@ exports.Opt = Opt;
 exports.AppErrorType = AppErrorType;
 exports.IOAppError = IOAppError;
 exports.$great$great$eq = $great$great$eq;
-exports.makeNetworkRequest = makeNetworkRequest;
 exports.isMoveLegalRequest = isMoveLegalRequest;
 exports.attemptMoveCommand = attemptMoveCommand;
 exports.testRequestSuccessLegalMove = testRequestSuccessLegalMove;
