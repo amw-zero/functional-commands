@@ -82,7 +82,7 @@ let attemptMoveCommand: IO.t(state, string) = {
 
   isMoveLegalRequest(() => 5, 2, 3)      // make network request
   |> IO.map(moveIfLegal)                 // operate on state subtree
-  |> IO.map(c => {...state, cards: c});  // replace state subtree
+  |> IO.map(c => {...state, cards: c});  // replace state subtree, resolve to full state
 };
 
 let test = () => {
