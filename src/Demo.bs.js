@@ -3,6 +3,7 @@
 
 var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
+var Caml_obj = require("bs-platform/lib/js/caml_obj.js");
 var Relude_IO = require("relude/src/Relude_IO.bs.js");
 var Caml_array = require("bs-platform/lib/js/caml_array.js");
 var Relude_List = require("relude/src/Relude_List.bs.js");
@@ -90,26 +91,47 @@ var state = [
 
 function moveNums(s) {
   var num = Relude_Option.getOrElse(5, Relude_List.head(Caml_array.caml_array_get(s, 0)));
-  Caml_array.caml_array_set(state, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
-  Caml_array.caml_array_set(state, 0, /* [] */0);
-  return state;
+  Caml_array.caml_array_set(s, 1, Relude_List.append(num, Caml_array.caml_array_get(s, 1)));
+  Caml_array.caml_array_set(s, 0, /* [] */0);
+  return s;
 }
 
-function moveIfLegal(legal) {
+function moveIfLegalM(legal) {
   return Relude_IO.pure(legal ? moveNums(state) : state);
 }
 
+function moveIfLegal(legal) {
+  if (legal) {
+    return moveNums(state);
+  } else {
+    return state;
+  }
+}
+
 console.log(Caml_array.caml_array_get(state, 0));
 
 console.log(Caml_array.caml_array_get(state, 1));
 
-Relude_IO.unsafeRunAsync((function (param) {
-        return /* () */0;
-      }), Curry._2($great$great$eq, Relude_IO.suspendIO(makeNetworkRequest), moveIfLegal));
+var cmdM = Curry._2($great$great$eq, Relude_IO.suspendIO(makeNetworkRequest), moveIfLegalM);
 
-console.log(Caml_array.caml_array_get(state, 0));
+var cmdMap = Relude_IO.map(moveIfLegal, Relude_IO.suspendIO(makeNetworkRequest));
 
-console.log(Caml_array.caml_array_get(state, 1));
+function test(param) {
+  Relude_IO.unsafeRunAsync((function (param) {
+          return /* () */0;
+        }), cmdMap);
+  console.log(Caml_array.caml_array_get(state, 0) === /* [] */0);
+  console.log(Caml_obj.caml_equal(Caml_array.caml_array_get(state, 1), /* :: */[
+            2,
+            /* :: */[
+              1,
+              /* [] */0
+            ]
+          ]));
+  return /* () */0;
+}
+
+test(/* () */0);
 
 var L = /* alias */0;
 
@@ -135,5 +157,9 @@ exports.isMoveLegalUseCase = isMoveLegalUseCase;
 exports.otherUseCase = otherUseCase;
 exports.state = state;
 exports.moveNums = moveNums;
+exports.moveIfLegalM = moveIfLegalM;
 exports.moveIfLegal = moveIfLegal;
+exports.cmdM = cmdM;
+exports.cmdMap = cmdMap;
+exports.test = test;
 /* IOAppError Not a pure module */

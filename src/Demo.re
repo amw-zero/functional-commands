@@ -49,27 +49,44 @@ let otherNetworkRequest = () => IO.async(onDone => onDone(Ok(5)));
 let isMoveLegalUseCase = (s, c1, c2) => IO.suspendIO(makeNetworkRequest);
 let otherUseCase = (arg) => IO.suspendIO(otherNetworkRequest)
 
-
-
 let state = [|[1], [2]|];
 
 let moveNums = s => {
   let num = L.head(s[0]) |> Opt.getOrElse(5);
-  state[1] = L.append(num, s[1]);
-  state[0] = [];
-  state
+  s[1] = L.append(num, s[1]);
+  s[0] = [];
+  s
 };
 
 // legal => IO.pure()
-let moveIfLegal = legal => IO.pure(legal ? moveNums(state) : state);
+ let moveIfLegalM = legal => IO.pure(legal ? moveNums(state) : state);
+let moveIfLegal = legal => legal ? moveNums(state) : state;
 
 // moveNums(state);
 Js.log(state[0]);
 Js.log(state[1]);
 
-isMoveLegalUseCase(() => 5, 2, 3)
->>= (moveIfLegal)
-|> IO.unsafeRunAsync(_ => ());
 
-Js.log(state[0]);
-Js.log(state[1]);
+// |> IO.unsafeRunAsync(_ => ());
+
+
+
+let cmdM = 
+  isMoveLegalUseCase(() => 5, 2, 3)
+  >>= (moveIfLegalM)
+
+let cmdMap: IO.t(array(list(int)), string) = 
+  isMoveLegalUseCase(() => 5, 2, 3)
+  |> IO.map(moveIfLegal);
+
+let test = () => {
+  // Command
+  cmdMap
+  |> IO.unsafeRunAsync(_ => ());
+
+  // Result
+  Js.log(state[0] == []);
+  Js.log(state[1] == [2, 1]);
+};
+
+test();
